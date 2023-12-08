@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  phonebook_db:
+    container_name: phonebook_db
+    image: mysql:8.2
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'phone_book_db'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: '12345678'
+      MYSQL_ROOT_PASSWORD: '123456789'
+    ports:
+      - '13306:3306'
+    #expose:
+     # - '13306'
+    volumes:
+      - local-db:/var/lib/mysql
+    #networks:
+      #- internal-network
+
+  mysql-workbench:
+    image: lscr.io/linuxserver/mysql-workbench:latest
+    container_name: mysql-workbench
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - /path/to/config:/config
+    ports:
+      - 3000:3000
+      - 3001:3001
+    cap_add:
+      - IPC_LOCK
+    restart: unless-stopped
+    #networks:
+     # - internal-network
+    depends_on:
+      - phonebook_db
+
+volumes:
+  local-db:
+
+networks:
+  internal-network:
+      driver: bridge
