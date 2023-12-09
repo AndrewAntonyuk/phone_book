@@ -6,7 +6,9 @@ import com.org.phone_book.entity.PhoneBook;
 import com.org.phone_book.exception.PhoneBookEntriesNotFoundException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Session;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Repository;
 
@@ -15,17 +17,20 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Repository
-public class PhoneBookRepositoryImpl implements PhoneBookRepository {
+public class PhoneBookRepositoryHiberImpl implements PhoneBookRepositoryHiber {
 
     private final ModelMapper modelMapper;
-
     @PersistenceContext
     private EntityManager entityManager;
 
     @Override
     public List<PhoneBookResponseDto> getAll() {
-        List<PhoneBook> allEntities = entityManager.createQuery("FROM PhoneBook", PhoneBook.class)
-                                                   .getResultList();
+        var session = entityManager.unwrap(Session.class);
+
+        TypedQuery<PhoneBook> query = session.createQuery("FROM PhoneBook", PhoneBook.class);
+        List<PhoneBook> allEntities = query.getResultList();
+
+        session.close();
 
         return allEntities.stream()
                 .map(o -> modelMapper.map(o, PhoneBookResponseDto.class))
@@ -34,32 +39,52 @@ public class PhoneBookRepositoryImpl implements PhoneBookRepository {
 
     @Override
     public PhoneBookResponseDto getById(Long id) {
-        return modelMapper.map(findById(id), PhoneBookResponseDto.class);
+        var session = entityManager.unwrap(Session.class);
+
+        PhoneBook entity = session.get(PhoneBook.class, id);
+
+        session.close();
+
+        return modelMapper.map(entity, PhoneBookResponseDto.class);
     }
 
     @Override
     public Long create(PhoneBookRequestDto requestEntity) {
-        return entityManager.merge(modelMapper.map(requestEntity, PhoneBook.class)).getId();
+        var session = entityManager.unwrap(Session.class);
+
+        Long entityId = session.merge(modelMapper.map(requestEntity, PhoneBook.class)).getId();
+
+        session.close();
+
+        return entityId;
     }
 
     @Override
     public boolean delete(Long id) {
-        var currentEntity = findById(id);
+        var session = entityManager.unwrap(Session.class);
 
-        entityManager.remove(currentEntity);
+        var currentEntity = findById(id, session);
+
+        session.remove(currentEntity);
+        session.close();
 
         return currentEntity.getId() >= 0;
     }
 
     @Override
     public Long update(PhoneBookRequestDto requestEntity) {
-        findById(requestEntity.getId());
+        var session = entityManager.unwrap(Session.class);
 
-        return entityManager.merge(modelMapper.map(requestEntity, PhoneBook.class)).getId();
+        findById(requestEntity.getId(), session);
+
+        session.merge(modelMapper.map(requestEntity, PhoneBook.class));
+        session.close();
+
+        return requestEntity.getId();
     }
 
-    private PhoneBook findById(Long id) {
-        var foundedEntity = entityManager.find(PhoneBook.class, id);
+    private PhoneBook findById(Long id, Session session) {
+        var foundedEntity = session.find(PhoneBook.class, id);
 
         if (foundedEntity == null)
             throw new PhoneBookEntriesNotFoundException("Can't find entries with id " + id);

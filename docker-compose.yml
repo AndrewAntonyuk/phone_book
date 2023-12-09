@@ -44,7 +44,7 @@ services:
       context: ./
       dockerfile: Dockerfile
     ports:
-      - 8080:8080
+      - 18080:8080
     depends_on:
       - phonebook_db
     networks:
