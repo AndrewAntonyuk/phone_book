@@ -5,6 +5,7 @@ import com.org.phone_book.dto.PhoneBookResponseDto;
 import com.org.phone_book.entity.PhoneBook;
 import com.org.phone_book.exception.PhoneBookEntriesNotFoundException;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
@@ -74,13 +75,21 @@ public class PhoneBookRepositoryHiberImpl implements PhoneBookRepositoryHiber {
     @Override
     public Long update(PhoneBookRequestDto requestEntity) {
         var session = entityManager.unwrap(Session.class);
+        PhoneBook foundedById;
 
-        findById(requestEntity.getId(), session);
+        try {
+            foundedById = findById(requestEntity.getId(), session);
+            modelMapper.map(requestEntity, foundedById);
+            session.merge(foundedById);
 
-        session.merge(modelMapper.map(requestEntity, PhoneBook.class));
-        session.close();
+            session.flush();
+        } catch (OptimisticLockException ex) {
+            throw new OptimisticLockException("Another user already has been modifying entity with id " + requestEntity.getId(), ex);
+        } finally {
+            session.close();
+        }
 
-        return requestEntity.getId();
+        return foundedById.getId();
     }
 
     private PhoneBook findById(Long id, Session session) {

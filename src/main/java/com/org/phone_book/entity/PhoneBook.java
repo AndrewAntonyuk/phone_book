@@ -23,4 +23,7 @@ public class PhoneBook {
 
     @Column(nullable = false)
     private String phone;
+
+    @Version
+    private Long version;
 }

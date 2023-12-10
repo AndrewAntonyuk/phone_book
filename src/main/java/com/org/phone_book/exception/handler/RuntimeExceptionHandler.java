@@ -1,6 +1,7 @@
 package com.org.phone_book.exception.handler;
 
 import com.org.phone_book.exception.PhoneBookEntriesNotFoundException;
+import jakarta.persistence.OptimisticLockException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +14,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class RuntimeExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(value = {PhoneBookEntriesNotFoundException.class})
-    protected ResponseEntity<Object> handleNotFound(Exception exception, WebRequest request){
+    protected ResponseEntity<Object> handleNotFound(Exception exception, WebRequest request) {
         var responseBody = exception.getMessage();
 
         return handleExceptionInternal(
@@ -25,8 +26,21 @@ public class RuntimeExceptionHandler extends ResponseEntityExceptionHandler {
         );
     }
 
+    @ExceptionHandler(value = {OptimisticLockException.class})
+    protected ResponseEntity<Object> handleConcurrencyException(OptimisticLockException exception, WebRequest request) {
+        var responseBody = exception.getMessage();
+
+        return handleExceptionInternal(
+                exception,
+                responseBody,
+                new HttpHeaders(),
+                HttpStatus.CONFLICT,
+                request
+        );
+    }
+
     @ExceptionHandler(value = {Exception.class})
-    protected ResponseEntity<Object> handleBaseException(Exception exception, WebRequest request){
+    protected ResponseEntity<Object> handleBaseException(Exception exception, WebRequest request) {
         var responseBody = exception.getMessage();
 
         return handleExceptionInternal(

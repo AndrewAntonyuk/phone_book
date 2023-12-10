@@ -17,28 +17,28 @@ public class PhoneBookController {
     private final PhoneBookRepository phoneBookRepository;
 
     @GetMapping("/get-all")
-    public List<PhoneBookResponseDto> getPhoneBookEntries(){
+    public List<PhoneBookResponseDto> getPhoneBookEntries() {
         return phoneBookRepository.getAll();
     }
 
     @PostMapping("/add")
-    public Long addNewEntries(@Validated @RequestBody PhoneBookRequestDto requestDto){
+    public Long addNewEntries(@Validated @RequestBody PhoneBookRequestDto requestDto) {
         return phoneBookRepository.create(requestDto);
     }
 
     @GetMapping("/get")
-    public PhoneBookResponseDto getPhoneBookEntryById(@RequestParam Long id){
+    public PhoneBookResponseDto getPhoneBookEntryById(@RequestParam Long id) {
         return phoneBookRepository.getById(id);
     }
 
     @DeleteMapping("/delete")
-    public boolean deletePhoneBookEntryById(@RequestParam Long id){
+    public boolean deletePhoneBookEntryById(@RequestParam Long id) {
         return phoneBookRepository.delete(id);
     }
 
     @PutMapping("/put")
     public Long updatePhoneBookEntryById(@Validated @RequestBody PhoneBookRequestDto requestDto,
-                                                         @RequestParam Long id){
+                                         @RequestParam Long id) {
         requestDto.setId(id);
         return phoneBookRepository.update(requestDto);
     }
